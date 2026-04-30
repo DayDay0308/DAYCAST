@@ -12,7 +12,9 @@ import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Base64
 import android.util.Log
 import org.java_websocket.client.WebSocketClient
@@ -60,7 +62,7 @@ class ScreenCaptureService : Service() {
     }
 
     private fun connectToServer() {
-        val uri = URI("ws://$serverIp:8080")
+        val uri = URI("ws://$serverIp:3000")
         webSocketClient = object : WebSocketClient(uri) {
             override fun onOpen(handshake: ServerHandshake?) {
                 Log.d(TAG, "✅ Connected to server")
@@ -70,7 +72,10 @@ class ScreenCaptureService : Service() {
             override fun onMessage(message: String?) {
                 Log.d(TAG, "📨 Message: $message")
                 if (message?.contains("auth-success") == true) {
-                    startCapture()
+                    // Run on main thread
+                    Handler(Looper.getMainLooper()).post {
+                        startCapture()
+                    }
                 }
             }
 
@@ -87,29 +92,50 @@ class ScreenCaptureService : Service() {
     }
 
     private fun startCapture() {
-        val metrics = resources.displayMetrics
-        val width = metrics.widthPixels
-        val height = metrics.heightPixels
-        val density = metrics.densityDpi
+        try {
+            val metrics = resources.displayMetrics
+            val width = metrics.widthPixels
+            val height = metrics.heightPixels
+            val density = metrics.densityDpi
 
-        imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+            imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
 
-        virtualDisplay = mediaProjection?.createVirtualDisplay(
-            "DAYCAST",
-            width, height, density,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader?.surface, null, null
-        )
+            // Register callback BEFORE createVirtualDisplay
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    Log.d(TAG, "⏹️ MediaProjection stopped")
+                    isStreaming = false
+                    stopSelf()
+                }
+            }, Handler(Looper.getMainLooper()))
 
-        isStreaming = true
-        streamFrames()
+            virtualDisplay = mediaProjection?.createVirtualDisplay(
+                "DAYCAST",
+                width, height, density,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                imageReader?.surface, null, null
+            )
+
+            Log.d(TAG, "📺 Virtual display created!")
+            isStreaming = true
+            streamFrames()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ startCapture error: ${e.message}")
+        }
     }
 
     private fun streamFrames() {
         Thread {
+            Log.d(TAG, "🎥 Streaming started!")
             while (isStreaming) {
                 try {
-                    val image = imageReader?.acquireLatestImage() ?: continue
+                    val image = imageReader?.acquireLatestImage()
+                    if (image == null) {
+                        Thread.sleep(10)
+                        continue
+                    }
+
                     val planes = image.planes
                     val buffer = planes[0].buffer
                     val pixelStride = planes[0].pixelStride
@@ -126,22 +152,28 @@ class ScreenCaptureService : Service() {
 
                     // Compress to JPEG
                     val stream = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream)
-                    val base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 40, stream)
+                    val base64 = Base64.encodeToString(
+                        stream.toByteArray(),
+                        Base64.NO_WRAP
+                    )
 
                     // Send frame to server
                     if (webSocketClient?.isOpen == true) {
                         webSocketClient?.send(
                             """{"type":"frame","image":"data:image/jpeg;base64,$base64"}"""
                         )
+                        Log.d(TAG, "📤 Frame sent!")
                     }
 
                     Thread.sleep(50) // ~20fps
 
                 } catch (e: Exception) {
                     Log.e(TAG, "Frame error: ${e.message}")
+                    Thread.sleep(100)
                 }
             }
+            Log.d(TAG, "⏹️ Streaming stopped")
         }.start()
     }
 
