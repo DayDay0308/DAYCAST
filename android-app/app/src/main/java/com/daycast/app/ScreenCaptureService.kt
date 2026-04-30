@@ -19,6 +19,7 @@ import android.util.Base64
 import android.util.Log
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.URI
 
@@ -71,10 +72,53 @@ class ScreenCaptureService : Service() {
 
             override fun onMessage(message: String?) {
                 Log.d(TAG, "📨 Message: $message")
+
+                // Auth success — start capturing
                 if (message?.contains("auth-success") == true) {
-                    // Run on main thread
                     Handler(Looper.getMainLooper()).post {
                         startCapture()
+                    }
+                }
+
+                // Handle control commands from browser
+                if (message?.contains("control") == true) {
+                    try {
+                        val json = JSONObject(message)
+                        val action = json.getString("action")
+                        val xRatio = json.getDouble("x").toFloat()
+                        val yRatio = json.getDouble("y").toFloat()
+
+                        val metrics = resources.displayMetrics
+                        val screenX = xRatio * metrics.widthPixels
+                        val screenY = yRatio * metrics.heightPixels
+
+                        Handler(Looper.getMainLooper()).post {
+                            val service = DaycastAccessibilityService.instance
+                            if (service != null) {
+                                when (action) {
+                                    "tap" -> {
+                                        Log.d(TAG, "👆 Tap at ($screenX, $screenY)")
+                                        service.performTap(screenX, screenY)
+                                    }
+                                    "swipe" -> {
+                                        val x2Ratio = json.getDouble("x2").toFloat()
+                                        val y2Ratio = json.getDouble("y2").toFloat()
+                                        val screenX2 = x2Ratio * metrics.widthPixels
+                                        val screenY2 = y2Ratio * metrics.heightPixels
+                                        Log.d(TAG, "👆 Swipe ($screenX,$screenY) → ($screenX2,$screenY2)")
+                                        service.performSwipe(screenX, screenY, screenX2, screenY2)
+                                    }
+                                    "longpress" -> {
+                                        Log.d(TAG, "👆 Long press at ($screenX, $screenY)")
+                                        service.performLongPress(screenX, screenY)
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "❌ Accessibility service not enabled!")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Control error: ${e.message}")
                     }
                 }
             }
@@ -163,7 +207,6 @@ class ScreenCaptureService : Service() {
                         webSocketClient?.send(
                             """{"type":"frame","image":"data:image/jpeg;base64,$base64"}"""
                         )
-                        Log.d(TAG, "📤 Frame sent!")
                     }
 
                     Thread.sleep(50) // ~20fps

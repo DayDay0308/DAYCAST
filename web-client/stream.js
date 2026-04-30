@@ -115,17 +115,126 @@ disconnectBtn.addEventListener('click', () => {
   connectBtn.disabled = false;
 });
 
-// Send touch control to phone
-function sendControl(action, x, y) {
+// Send control to phone
+function sendControl(action, x, y, x2 = 0, y2 = 0) {
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'control', action, x, y }));
+    ws.send(JSON.stringify({ type: 'control', action, x, y, x2, y2 }));
   }
 }
 
-// Click on stream = tap on phone
-streamImg.addEventListener('click', (e) => {
+// Track touch/mouse for swipe detection
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+let isDragging = false;
+
+// ============ MOUSE EVENTS (Laptop) ============
+
+streamImg.addEventListener('mousedown', (e) => {
   const rect = streamImg.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width;
-  const y = (e.clientY - rect.top) / rect.height;
-  sendControl('tap', x, y);
+  touchStartX = (e.clientX - rect.left) / rect.width;
+  touchStartY = (e.clientY - rect.top) / rect.height;
+  touchStartTime = Date.now();
+  isDragging = false;
+});
+
+streamImg.addEventListener('mousemove', (e) => {
+  if (e.buttons === 1) {
+    isDragging = true;
+  }
+});
+
+streamImg.addEventListener('mouseup', (e) => {
+  const rect = streamImg.getBoundingClientRect();
+  const endX = (e.clientX - rect.left) / rect.width;
+  const endY = (e.clientY - rect.top) / rect.height;
+  const duration = Date.now() - touchStartTime;
+
+  const distX = Math.abs(endX - touchStartX);
+  const distY = Math.abs(endY - touchStartY);
+  const moved = distX > 0.05 || distY > 0.05;
+
+  if (moved && isDragging) {
+    console.log(`🔄 Swipe: (${touchStartX.toFixed(2)}, ${touchStartY.toFixed(2)}) → (${endX.toFixed(2)}, ${endY.toFixed(2)})`);
+    sendControl('swipe', touchStartX, touchStartY, endX, endY);
+    showControlFeedback('↔️ Swipe');
+  } else if (duration > 600) {
+    console.log(`👆 Long press at (${touchStartX.toFixed(2)}, ${touchStartY.toFixed(2)})`);
+    sendControl('longpress', touchStartX, touchStartY);
+    showControlFeedback('👆 Long Press');
+  } else {
+    console.log(`👆 Tap at (${touchStartX.toFixed(2)}, ${touchStartY.toFixed(2)})`);
+    sendControl('tap', touchStartX, touchStartY);
+    showControlFeedback('👆 Tap');
+  }
+
+  isDragging = false;
+});
+
+// ============ TOUCH EVENTS (Mobile/Tablet) ============
+
+streamImg.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = streamImg.getBoundingClientRect();
+  touchStartX = (touch.clientX - rect.left) / rect.width;
+  touchStartY = (touch.clientY - rect.top) / rect.height;
+  touchStartTime = Date.now();
+  isDragging = false;
+}, { passive: false });
+
+streamImg.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  isDragging = true;
+}, { passive: false });
+
+streamImg.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  const touch = e.changedTouches[0];
+  const rect = streamImg.getBoundingClientRect();
+  const endX = (touch.clientX - rect.left) / rect.width;
+  const endY = (touch.clientY - rect.top) / rect.height;
+  const duration = Date.now() - touchStartTime;
+
+  const distX = Math.abs(endX - touchStartX);
+  const distY = Math.abs(endY - touchStartY);
+  const moved = distX > 0.05 || distY > 0.05;
+
+  if (moved && isDragging) {
+    console.log(`🔄 Touch Swipe: (${touchStartX.toFixed(2)}, ${touchStartY.toFixed(2)}) → (${endX.toFixed(2)}, ${endY.toFixed(2)})`);
+    sendControl('swipe', touchStartX, touchStartY, endX, endY);
+    showControlFeedback('↔️ Swipe');
+  } else if (duration > 600) {
+    sendControl('longpress', touchStartX, touchStartY);
+    showControlFeedback('👆 Long Press');
+  } else {
+    sendControl('tap', touchStartX, touchStartY);
+    showControlFeedback('👆 Tap');
+  }
+
+  isDragging = false;
+}, { passive: false });
+
+// ============ VISUAL FEEDBACK ============
+
+function showControlFeedback(text) {
+  const badge = document.getElementById('phone-status');
+  const original = badge.textContent;
+  badge.textContent = text;
+  setTimeout(() => { badge.textContent = original; }, 800);
+}
+
+// ============ KEYBOARD SHORTCUTS ============
+
+document.addEventListener('keydown', (e) => {
+  switch(e.key) {
+    case 'Escape':
+      sendControl('tap', 0.05, 0.97);
+      showControlFeedback('⬅️ Back');
+      break;
+    case 'Home':
+      sendControl('tap', 0.5, 0.97);
+      showControlFeedback('🏠 Home');
+      break;
+  }
 });
