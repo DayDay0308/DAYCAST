@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp"
+    android:background="#0A0A0A">
+
+    <!-- Logo -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📱"
+        android:textSize="64sp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- App Name -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DAYCAST"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="#6366F1"
+        android:letterSpacing="0.2"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Tagline -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mirror your phone. Anywhere."
+        android:textSize="14sp"
+        android:textColor="#555555"
+        android:layout_marginBottom="48dp"/>
+
+    <!-- Server IP Input -->
+    <EditText
+        android:id="@+id/etServerIp"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="Server IP (e.g. 192.168.1.5)"
+        android:inputType="text"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#555555"
+        android:background="@drawable/input_background"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- PIN Input -->
+    <EditText
+        android:id="@+id/etPin"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="6-digit PIN"
+        android:inputType="number"
+        android:maxLength="6"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#555555"
+        android:background="@drawable/input_background"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:letterSpacing="0.5"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Connect Button -->
+    <Button
+        android:id="@+id/btnConnect"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Start Casting"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/button_background"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Status Text -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter your server IP and PIN"
+        android:textSize="14sp"
+        android:textColor="#555555"/>
+
+</LinearLayout>
