@@ -32,9 +32,9 @@ body {
   background: #111;
   border: 1px solid #222;
   border-radius: 24px;
-  padding: 48px 40px;
+  padding: 40px 36px;
   text-align: center;
-  width: 380px;
+  width: 400px;
   box-shadow: 0 0 60px rgba(99, 102, 241, 0.15);
 }
 
@@ -54,10 +54,92 @@ h1 {
 
 .tagline {
   color: #555;
-  margin: 8px 0 32px;
+  margin: 8px 0 24px;
   font-size: 0.9rem;
 }
 
+/* TABS */
+.tabs {
+  display: flex;
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+/* QR CODE */
+.qr-hint {
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.qr-box {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-box img {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+}
+
+.qr-loading {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.qr-info {
+  color: #555;
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+
+#refresh-qr-btn {
+  width: 100%;
+  padding: 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#refresh-qr-btn:hover {
+  border-color: #6366f1;
+  color: white;
+}
+
+/* PIN INPUT */
 .input-group input {
   width: 100%;
   padding: 14px 20px;
@@ -170,6 +252,7 @@ button:hover {
   height: 100%;
   object-fit: contain;
   display: none;
+  cursor: crosshair;
 }
 
 .placeholder {

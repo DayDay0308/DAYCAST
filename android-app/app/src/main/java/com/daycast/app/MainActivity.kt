@@ -3,11 +3,13 @@ package com.daycast.app
 import android.app.Activity
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +30,9 @@ class MainActivity : AppCompatActivity() {
         btnConnect = findViewById(R.id.btnConnect)
         tvStatus = findViewById(R.id.tvStatus)
 
+        // Handle QR Code deep link
+        handleDeepLink(intent)
+
         btnConnect.setOnClickListener {
             val ip = etServerIp.text.toString().trim()
             val pin = etPin.text.toString().trim()
@@ -42,10 +47,51 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            ScreenCaptureService.serverIp = ip
-            ScreenCaptureService.pin = pin
+            // Show confirmation dialog before casting
+            AlertDialog.Builder(this)
+                .setTitle("🔐 Start Screen Cast?")
+                .setMessage("Your screen will be mirrored to the connected browser.\n\nAre you sure you want to proceed?")
+                .setPositiveButton("✅ Allow") { _, _ ->
+                    ScreenCaptureService.serverIp = ip
+                    ScreenCaptureService.pin = pin
+                    requestScreenCapture()
+                }
+                .setNegativeButton("❌ Cancel", null)
+                .show()
+        }
+    }
 
-            requestScreenCapture()
+    // Handle deep link when app is already open
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
+        val uri: Uri? = intent?.data
+        if (uri != null && uri.scheme == "daycast" && uri.host == "connect") {
+            val ip = uri.getQueryParameter("ip") ?: ""
+            val pin = uri.getQueryParameter("pin") ?: ""
+            val port = uri.getQueryParameter("port") ?: "3000"
+
+            if (ip.isNotEmpty() && pin.isNotEmpty()) {
+                etServerIp.setText(ip)
+                etPin.setText(pin)
+                tvStatus.text = "🔗 QR Code scanned! Tap Start Casting"
+
+                ScreenCaptureService.serverIp = ip
+                ScreenCaptureService.pin = pin
+
+                // Auto show confirmation dialog after QR scan
+                AlertDialog.Builder(this)
+                    .setTitle("✅ QR Code Scanned!")
+                    .setMessage("Server: $ip\nPIN: $pin\n\nStart casting your screen now?")
+                    .setPositiveButton("🚀 Start Casting") { _, _ ->
+                        requestScreenCapture()
+                    }
+                    .setNegativeButton("Later", null)
+                    .show()
+            }
         }
     }
 
