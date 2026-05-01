@@ -63,7 +63,11 @@ class ScreenCaptureService : Service() {
     }
 
     private fun connectToServer() {
-        val uri = URI("ws://$serverIp:3000")
+        val uri = if (serverIp.contains("railway.app") || serverIp.contains("https")) {
+            URI("wss://${serverIp.replace("https://", "")}")
+        } else {
+            URI("ws://$serverIp:3000")
+        }
         webSocketClient = object : WebSocketClient(uri) {
             override fun onOpen(handshake: ServerHandshake?) {
                 Log.d(TAG, "✅ Connected to server")

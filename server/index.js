@@ -97,7 +97,11 @@ app.get('/api/pin', (req, res) => {
 app.get('/api/qrcode', async (req, res) => {
   try {
     const timeLeft = Math.max(0, Math.floor((pinExpiry - Date.now()) / 1000));
-    const connectionData = `daycast://connect?ip=${LOCAL_IP}&pin=${currentPIN}&port=3000`;
+    const isCloud = process.env.RAILWAY_ENVIRONMENT !== undefined;
+const serverUrl = isCloud 
+  ? process.env.RAILWAY_PUBLIC_DOMAIN || LOCAL_IP
+  : LOCAL_IP;
+const connectionData = `daycast://connect?ip=${serverUrl}&pin=${currentPIN}&port=3000`;
 
     const qrDataUrl = await QRCode.toDataURL(connectionData, {
       width: 300,
