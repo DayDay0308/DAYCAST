@@ -13,12 +13,26 @@ let frameCount = 0;
 let lastFpsTime = Date.now();
 let countdownInterval = null;
 
+// ============ AUTO CONNECT FROM URL ============
+
+window.addEventListener('load', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlPin = urlParams.get('pin');
+  if (urlPin && urlPin.length === 6) {
+    console.log('📱 PIN found in URL:', urlPin);
+    if (pinInput) pinInput.value = urlPin;
+    setTimeout(() => connectWithPin(urlPin), 800);
+  }
+});
+
 // ============ QR CODE ============
 
 function loadQRCode() {
   const qrImage = document.getElementById('qr-image');
   const qrLoading = document.getElementById('qr-loading');
   const qrInfo = document.getElementById('qr-info');
+
+  if (!qrImage || !qrLoading) return;
 
   qrImage.style.display = 'none';
   qrLoading.style.display = 'block';
@@ -31,12 +45,12 @@ function loadQRCode() {
       qrImage.src = data.qrcode;
       qrImage.style.display = 'block';
       qrLoading.style.display = 'none';
-      qrInfo.textContent = `IP: ${data.ip} | PIN: ${data.pin}`;
+      if (qrInfo) qrInfo.textContent = `IP: ${data.ip} | PIN: ${data.pin}`;
       if (pinInput) pinInput.value = data.pin;
       if (data.timeLeft) startCountdown(data.timeLeft, qrInfo, data);
     })
     .catch(() => {
-      qrLoading.textContent = '❌ Failed to load QR';
+      if (qrLoading) qrLoading.textContent = '❌ Failed to load QR';
     });
 }
 
@@ -51,7 +65,7 @@ function startCountdown(seconds, qrInfo, data) {
       clearInterval(countdownInterval);
       loadQRCode();
     } else {
-      qrInfo.textContent = `IP: ${data.ip} | PIN: ${data.pin} | ⏱️ ${timeLeft}s`;
+      if (qrInfo) qrInfo.textContent = `IP: ${data.ip} | PIN: ${data.pin} | ⏱️ ${timeLeft}s`;
     }
   }, 1000);
 }
@@ -156,13 +170,11 @@ function connectWithPin(pin) {
         }
       }
 
-      // PIN refreshed — reload QR
       if (data.type === 'pin-refresh') {
         loadQRCode();
         console.log('🔄 QR Code refreshed');
       }
 
-      // Session expired
       if (data.type === 'session-expired') {
         alert('⏰ Session expired after 30 minutes. Please reconnect.');
         castScreen.classList.add('hidden');
@@ -303,6 +315,7 @@ streamImg.addEventListener('touchend', (e) => {
 
 function showControlFeedback(text) {
   const badge = document.getElementById('phone-status');
+  if (!badge) return;
   const original = badge.textContent;
   badge.textContent = text;
   setTimeout(() => { badge.textContent = original; }, 800);
