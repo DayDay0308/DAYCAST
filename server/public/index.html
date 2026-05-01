@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAYCAST</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div class="screen" id="login-screen">
+    <div class="card">
+      <div class="logo">📱</div>
+      <h1>DAYCAST</h1>
+      <p class="tagline">Mirror your phone. Anywhere.</p>
+
+      <!-- Tab Switcher -->
+      <div class="tabs">
+        <button class="tab active" id="tab-qr" onclick="switchTab('qr')">
+          QR Code
+        </button>
+        <button class="tab" id="tab-pin" onclick="switchTab('pin')">
+          Manual
+        </button>
+      </div>
+
+      <!-- QR Code Tab -->
+      <div id="qr-section">
+        <p class="qr-hint">Scan with your phone camera</p>
+        <div class="qr-box">
+          <img id="qr-image" src="" alt="QR Code"/>
+          <div class="qr-loading" id="qr-loading">⏳ Generating QR...</div>
+        </div>
+        <p class="qr-info" id="qr-info"></p>
+        <button id="refresh-qr-btn" onclick="loadQRCode()">🔄 Refresh QR</button>
+      </div>
+
+      <!-- Manual Tab -->
+      <div id="pin-section" class="hidden">
+        <div class="input-group">
+          <input
+            type="text"
+            id="pin-input"
+            placeholder="Enter 6-digit PIN"
+            maxlength="6"
+          />
+        </div>
+        <button id="connect-btn">Connect</button>
+        <p class="error" id="error-msg"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CAST SCREEN -->
+  <div class="screen hidden" id="cast-screen">
+    <div class="topbar">
+      <span>📱 DAYCAST</span>
+      <span class="badge" id="phone-status">Waiting for phone...</span>
+      <button id="disconnect-btn">Disconnect</button>
+    </div>
+    <div class="cast-area">
+      <div class="phone-frame">
+        <img id="stream-img" src="" alt=""/>
+        <div class="placeholder" id="placeholder">
+          <p>📡 Waiting for phone stream...</p>
+          <p class="sub">Open DAYCAST app on your phone</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="stream.js"></script>
+</body>
+</html>

@@ -26,16 +26,22 @@ const LOCAL_IP = getLocalIP();
 
 // Serve web client
 // Support both local and Railway deployment
+// Serve from public folder (Railway) or web-client (local)
+const publicPath = path.join(__dirname, 'public');
 const webClientPath = path.join(__dirname, '../web-client');
-const localWebClient = path.join(__dirname, 'public');
 
+app.use(express.static(publicPath));
 app.use(express.static(webClientPath));
-app.use(express.static(localWebClient));
 
-// Fallback route
 app.get('/', (req, res) => {
-  const indexPath = path.join(__dirname, '../web-client/index.html');
-  res.sendFile(indexPath);
+  const railwayIndex = path.join(__dirname, 'public/index.html');
+  const localIndex = path.join(__dirname, '../web-client/index.html');
+  
+  if (require('fs').existsSync(railwayIndex)) {
+    res.sendFile(railwayIndex);
+  } else {
+    res.sendFile(localIndex);
+  }
 });
 
 // Connected clients
