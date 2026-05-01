@@ -25,7 +25,18 @@ function getLocalIP() {
 const LOCAL_IP = getLocalIP();
 
 // Serve web client
-app.use(express.static(path.join(__dirname, '../web-client')));
+// Support both local and Railway deployment
+const webClientPath = path.join(__dirname, '../web-client');
+const localWebClient = path.join(__dirname, 'public');
+
+app.use(express.static(webClientPath));
+app.use(express.static(localWebClient));
+
+// Fallback route
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, '../web-client/index.html');
+  res.sendFile(indexPath);
+});
 
 // Connected clients
 let phoneClient = null;
